@@ -1,6 +1,7 @@
 use rocket::{http::Status, serde::json::Json};
 use std::borrow::Cow;
 use uuid::Uuid;
+use validator::Validate;
 
 use crate::{
     db::{projects, Db},
@@ -53,7 +54,7 @@ pub async fn create_project<'a>(
     db: Db,
     project: Json<ProjectCreate<'_>>,
 ) -> Result<Json<Project>, AppError<'a>> {
-    // TODO: input validation
+    project.validate()?;
 
     let new_project = Project {
         project_id: Uuid::new_v4().to_string(),

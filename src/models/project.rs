@@ -1,5 +1,6 @@
 use diesel::{AsChangeset, Identifiable, Insertable, Queryable};
 use serde::{Deserialize, Serialize};
+use validator_derive::Validate;
 
 use crate::schema::projects;
 
@@ -14,12 +15,19 @@ pub struct Project {
     pub github_repository: String,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Validate, Debug)]
 #[serde(crate = "rocket::serde")]
 pub struct ProjectCreate<'a> {
+    #[validate(length(
+        min = 5,
+        max = 16,
+        message = "Name must be between 5 and 16 characters"
+    ))]
     pub name: &'a str,
     pub description: Option<&'a str>,
+    #[validate(url(message = "Value is not a valid URL"))]
     pub url: &'a str,
+    #[validate(url(message = "Value is not a valid URL"))]
     pub github_repository: &'a str,
 }
 
