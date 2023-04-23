@@ -4,10 +4,12 @@ use diesel::result::DatabaseErrorKind;
 use rocket::{
     http::Status,
     response::{status, Responder},
-    serde::json::Json,
+    serde::json::{json, serde_json::to_string, Json},
 };
 use serde::Serialize;
 use thiserror::Error;
+use validator::ValidationErrors;
+use validator::ValidationErrorsKind::Field;
 
 #[derive(Serialize, Debug)]
 pub struct AppError<'a> {
@@ -57,6 +59,21 @@ impl<'a> From<DbError> for AppError<'a> {
 impl<'r, 'o: 'r> Responder<'r, 'o> for AppError<'r> {
     fn respond_to(self, request: &'r rocket::Request<'_>) -> rocket::response::Result<'o> {
         status::Custom(Status::new(self.code), Json(self)).respond_to(request)
+    }
+}
+
+impl From<ValidationErrors> for AppError<'_> {
+    fn from(errors: ValidationErrors) -> Self {
+        let mut errs = json!({});
+        for (field, errors) in errors.into_errors() {
+            if let Field(errors) = errors {
+                errs[field] = errors.into_iter().map(|err| err.message).collect();
+            }
+        }
+        Self::new(
+            Status::UnprocessableEntity,
+            Cow::from(to_string(&errs).unwrap()),
+        )
     }
 }
 
