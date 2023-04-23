@@ -22,7 +22,10 @@ pub fn rocket() -> _ {
             routes![
                 projects::get_projects,
                 projects::get_project,
-                projects::create_project
+                projects::get_project_by_name,
+                projects::create_project,
+                projects::update_project,
+                projects::delete_project,
             ],
         )
 }
