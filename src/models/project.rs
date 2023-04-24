@@ -31,11 +31,18 @@ pub struct ProjectCreate<'a> {
     pub github_repository: &'a str,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Validate, Debug)]
 #[serde(crate = "rocket::serde")]
 pub struct ProjectUpdate<'a> {
+    #[validate(length(
+        min = 5,
+        max = 16,
+        message = "Name must be between 5 and 16 characters"
+    ))]
     pub name: Option<&'a str>,
     pub description: Option<&'a str>,
+    #[validate(url(message = "Value is not a valid URL"))]
     pub url: Option<&'a str>,
+    #[validate(url(message = "Value is not a valid URL"))]
     pub github_repository: Option<&'a str>,
 }

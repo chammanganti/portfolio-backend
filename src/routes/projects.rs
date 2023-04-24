@@ -75,6 +75,8 @@ pub async fn update_project<'a>(
     id: &str,
     project: Json<ProjectUpdate<'_>>,
 ) -> Result<Json<Project>, AppError<'a>> {
+    project.validate()?;
+
     let id_find = Cow::Owned(id.to_string());
     let id_update = Cow::Owned(id.to_string());
     let existing_project = match db
