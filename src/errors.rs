@@ -22,6 +22,8 @@ pub struct AppError<'a> {
 pub enum CustomError<'a> {
     #[error("'{0}' does not exist")]
     RecordDoesNotExist(&'a str),
+    #[error("'{0}' already exists for project '{1}'")]
+    ProjectStatusAlreadyExists(&'a str, &'a str),
 }
 
 impl<'a> AppError<'a> {
@@ -50,6 +52,13 @@ impl<'a> From<DbError> for AppError<'a> {
             DbError::RecordAlreadyExists(info) => Self::new(
                 Status::Conflict,
                 Cow::from(format!("Record already exists: {}", info)),
+            ),
+            DbError::ForeignKeyDoesNotExist(info) => Self::new(
+                Status::BadRequest,
+                Cow::from(format!(
+                    "Foreign key value does not exist. Constraint: {}",
+                    info
+                )),
             ),
             _ => Self::default(),
         }
@@ -81,6 +90,8 @@ impl From<ValidationErrors> for AppError<'_> {
 pub enum DbError {
     #[error("Record already exists: {0}")]
     RecordAlreadyExists(String),
+    #[error("Foreign key value does not exist")]
+    ForeignKeyDoesNotExist(String),
     #[error("Internal db error")]
     InternalError,
 }
@@ -88,9 +99,17 @@ pub enum DbError {
 impl From<diesel::result::Error> for DbError {
     fn from(err: diesel::result::Error) -> Self {
         match err {
-            diesel::result::Error::DatabaseError(DatabaseErrorKind::UniqueViolation, info) => {
-                DbError::RecordAlreadyExists(info.message().to_string())
-            }
+            diesel::result::Error::DatabaseError(kind, info) => match kind {
+                DatabaseErrorKind::UniqueViolation => {
+                    DbError::RecordAlreadyExists(info.message().to_string())
+                }
+                DatabaseErrorKind::ForeignKeyViolation => DbError::ForeignKeyDoesNotExist(
+                    info.constraint_name()
+                        .unwrap_or("unable to retrieve constraint")
+                        .to_string(),
+                ),
+                _ => DbError::InternalError,
+            },
             _ => DbError::InternalError,
         }
     }
