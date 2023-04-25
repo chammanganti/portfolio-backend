@@ -2,6 +2,7 @@
 extern crate rocket;
 
 use dotenv::dotenv;
+use routes::project_statuses;
 
 use crate::routes::{health, projects};
 
@@ -26,6 +27,17 @@ pub fn rocket() -> _ {
                 projects::create_project,
                 projects::update_project,
                 projects::delete_project,
+            ],
+        )
+        .mount(
+            "/project_statuses",
+            routes![
+                project_statuses::get_project_statuses,
+                project_statuses::get_project_status,
+                project_statuses::get_project_statuses_by_project,
+                project_statuses::create_project_status,
+                project_statuses::update_project_status,
+                project_statuses::delete_project_status,
             ],
         )
 }
