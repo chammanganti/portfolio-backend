@@ -1,0 +1,17 @@
+syntax = "proto3";
+package project;
+
+service Project {
+    rpc QueueStatusUpdate (QueueStatusRequest) returns (QueueStatusResponse);
+}
+
+message QueueStatusRequest {
+    string project_status_id = 1;
+    string name = 2;
+    bool is_healthy = 3;
+    string project_id = 4;
+}
+
+message QueueStatusResponse {
+    bool queued = 1;
+}
