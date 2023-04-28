@@ -2,12 +2,16 @@
 extern crate rocket;
 
 use dotenv::dotenv;
-use routes::project_statuses;
+use rocket::fairing::AdHoc;
+use tonic::transport::Server;
 
 use crate::routes::{health, projects};
+use grpc::project::{project_proto::project_server::ProjectServer, ProjectService};
+use routes::project_statuses;
 
 mod db;
 mod errors;
+mod grpc;
 mod models;
 mod routes;
 mod schema;
@@ -17,6 +21,19 @@ pub fn rocket() -> _ {
     dotenv().ok();
     rocket::build()
         .attach(db::Db::fairing())
+        .attach(AdHoc::on_liftoff("gRPC", |_| {
+            Box::pin(async move {
+                let addr = "[::1]:9000".parse().unwrap();
+
+                let project_service = ProjectService::default();
+
+                let server = Server::builder()
+                    .add_service(ProjectServer::new(project_service))
+                    .serve(addr);
+
+                tokio::spawn(server);
+            })
+        }))
         .mount("/", routes![health::health])
         .mount(
             "/projects",
