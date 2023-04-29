@@ -1,13 +1,19 @@
 #[macro_use]
 extern crate rocket;
 
+use db::Db;
 use dotenv::dotenv;
 use rocket::fairing::AdHoc;
 use rocket::tokio::sync::broadcast::channel;
 use tonic::transport::Server;
 
 use crate::routes::{health, project_events, project_statuses, projects};
-use grpc::project::{project_proto::project_server::ProjectServer, ProjectService};
+use grpc::{
+    project::{project_proto::project_server::ProjectServer, ProjectService},
+    project_status::{
+        project_status_proto::project_status_server::ProjectStatusServer, ProjectStatusService,
+    },
+};
 use models::project_status::ProjectStatus;
 
 mod db;
@@ -22,14 +28,18 @@ pub fn rocket() -> _ {
     dotenv().ok();
     rocket::build()
         .attach(db::Db::fairing())
-        .attach(AdHoc::on_liftoff("gRPC", |_| {
+        .attach(AdHoc::on_liftoff("gRPC", |rocket| {
             Box::pin(async move {
                 let addr = "[::1]:9000".parse().unwrap();
 
-                let project_service = ProjectService::default();
+                let project_db = Db::get_one(rocket).await.unwrap();
+                let project_status_db = Db::get_one(rocket).await.unwrap();
+                let project_service = ProjectService::new(project_db);
+                let project_status_service = ProjectStatusService::new(project_status_db);
 
                 let server = Server::builder()
                     .add_service(ProjectServer::new(project_service))
+                    .add_service(ProjectStatusServer::new(project_status_service))
                     .serve(addr);
 
                 tokio::spawn(server);

@@ -2,16 +2,19 @@ syntax = "proto3";
 package project;
 
 service Project {
-    rpc QueueStatusUpdate (QueueStatusRequest) returns (QueueStatusResponse);
+    rpc Find (FindRequest) returns (FindResponse);
 }
 
-message QueueStatusRequest {
-    string project_status_id = 1;
+message ProjectProto {
+    string project_id = 1;
     string name = 2;
-    bool is_healthy = 3;
-    string project_id = 4;
+    string description = 3;
+    string url = 4;
+    string github_repository = 5;
 }
 
-message QueueStatusResponse {
-    bool queued = 1;
+message FindRequest {}
+
+message FindResponse {
+    repeated ProjectProto projects = 1;
 }

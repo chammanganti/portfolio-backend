@@ -1,0 +1,34 @@
+syntax = "proto3";
+package project_status;
+
+service ProjectStatus {
+    rpc Find (FindRequest) returns (FindResponse);
+    rpc Update (UpdateRequest) returns (UpdateResponse);
+}
+
+message ProjectStatusProto {
+    string project_status_id = 1;
+    string name = 2;
+    bool is_healthy = 3;
+    string project_id = 4;
+}
+
+message FindRequest {}
+
+message FindResponse {
+    repeated ProjectStatusProto project_statuses = 1;
+}
+
+message UpdateRequest {
+    string project_status_id = 1;
+    string name = 2;
+    bool is_healthy = 3;
+    string project_id = 4;
+}
+
+message UpdateResponse {
+    string project_status_id = 1;
+    string name = 2;
+    bool is_healthy = 3;
+    string project_id = 4;
+}
