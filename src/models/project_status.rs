@@ -5,7 +5,17 @@ use validator_derive::Validate;
 use super::project::Project;
 use crate::schema::project_statuses;
 
-#[derive(Serialize, Queryable, Insertable, AsChangeset, Identifiable, Associations, Debug)]
+#[derive(
+    Serialize,
+    Deserialize,
+    Queryable,
+    Insertable,
+    AsChangeset,
+    Identifiable,
+    Associations,
+    Clone,
+    Debug,
+)]
 #[diesel(belongs_to(Project))]
 #[diesel(table_name = project_statuses)]
 #[diesel(primary_key(project_status_id))]

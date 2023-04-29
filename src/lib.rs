@@ -3,11 +3,12 @@ extern crate rocket;
 
 use dotenv::dotenv;
 use rocket::fairing::AdHoc;
+use rocket::tokio::sync::broadcast::channel;
 use tonic::transport::Server;
 
-use crate::routes::{health, projects};
+use crate::routes::{health, project_events, project_statuses, projects};
 use grpc::project::{project_proto::project_server::ProjectServer, ProjectService};
-use routes::project_statuses;
+use models::project_status::ProjectStatus;
 
 mod db;
 mod errors;
@@ -34,6 +35,7 @@ pub fn rocket() -> _ {
                 tokio::spawn(server);
             })
         }))
+        .manage(channel::<ProjectStatus>(1024).0)
         .mount("/", routes![health::health])
         .mount(
             "/projects",
@@ -55,6 +57,13 @@ pub fn rocket() -> _ {
                 project_statuses::create_project_status,
                 project_statuses::update_project_status,
                 project_statuses::delete_project_status,
+            ],
+        )
+        .mount(
+            "/project_events",
+            routes![
+                project_events::project_status_events,
+                project_events::publish_project_status_event
             ],
         )
 }
