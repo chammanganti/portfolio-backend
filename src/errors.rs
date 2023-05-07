@@ -36,6 +36,24 @@ impl<'a> AppError<'a> {
     }
 }
 
+impl<'a> From<CustomError<'_>> for AppError<'a> {
+    fn from(err: CustomError<'_>) -> Self {
+        match err {
+            CustomError::RecordDoesNotExist(record) => Self::new(
+                Status::NotFound,
+                Cow::from(format!("'{0}' does not exist", record)),
+            ),
+            CustomError::ProjectStatusAlreadyExists(status, project) => Self::new(
+                Status::Conflict,
+                Cow::from(format!(
+                    "'{0}' already exists for project '{1}'",
+                    status, project
+                )),
+            ),
+        }
+    }
+}
+
 impl<'a> Default for AppError<'a> {
     fn default() -> Self {
         Self {
