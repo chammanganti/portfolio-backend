@@ -23,12 +23,7 @@ pub async fn get_project_status<'a>(db: Db, id: &str) -> Result<Json<ProjectStat
         .await?;
     match project_status {
         Some(project_status) => Ok(Json(project_status)),
-        None => {
-            return Err(AppError::new(
-                Status::NotFound,
-                Cow::from(CustomError::RecordDoesNotExist(id).to_string()),
-            ))
-        }
+        None => return Err(CustomError::RecordDoesNotExist(id).into()),
     }
 }
 
@@ -52,16 +47,11 @@ pub async fn create_project_status<'a>(
     project_status.validate()?;
 
     if check_project_status_by_project(&db, project_status.name, project_status.project_id).await? {
-        return Err(AppError::new(
-            Status::Conflict,
-            Cow::from(
-                CustomError::ProjectStatusAlreadyExists(
-                    project_status.name,
-                    project_status.project_id,
-                )
-                .to_string(),
-            ),
-        ));
+        return Err(CustomError::ProjectStatusAlreadyExists(
+            project_status.name,
+            project_status.project_id,
+        )
+        .into());
     }
 
     let new_project_status = ProjectStatus {
@@ -91,12 +81,7 @@ pub async fn update_project_status<'a>(
         .await?
     {
         Some(project) => project,
-        None => {
-            return Err(AppError::new(
-                Status::NotFound,
-                Cow::from(CustomError::<'_>::RecordDoesNotExist(id).to_string()),
-            ))
-        }
+        None => return Err(CustomError::RecordDoesNotExist(id).into()),
     };
 
     let updated_name = match project_status.name {
@@ -104,16 +89,11 @@ pub async fn update_project_status<'a>(
             if check_project_status_by_project(&db, new_name, &existing_project_status.project_id)
                 .await?
             {
-                return Err(AppError::new(
-                    Status::Conflict,
-                    Cow::from(
-                        CustomError::ProjectStatusAlreadyExists(
-                            new_name,
-                            &existing_project_status.project_id,
-                        )
-                        .to_string(),
-                    ),
-                ));
+                return Err(CustomError::ProjectStatusAlreadyExists(
+                    new_name,
+                    &existing_project_status.project_id,
+                )
+                .into());
             } else {
                 new_name.to_string()
             }
@@ -129,13 +109,9 @@ pub async fn update_project_status<'a>(
     let updated_project_id = match project_status.project_id {
         Some(new_project_id) => {
             if check_project_status_by_project(&db, &updated_name, new_project_id).await? {
-                return Err(AppError::new(
-                    Status::Conflict,
-                    Cow::from(
-                        CustomError::ProjectStatusAlreadyExists(&updated_name, new_project_id)
-                            .to_string(),
-                    ),
-                ));
+                return Err(
+                    CustomError::ProjectStatusAlreadyExists(&updated_name, new_project_id).into(),
+                );
             } else {
                 new_project_id.to_string()
             }
@@ -164,10 +140,7 @@ pub async fn delete_project_status<'a>(db: Db, id: &str) -> Result<Status, AppEr
         .await?
         .is_none()
     {
-        return Err(AppError::new(
-            Status::NotFound,
-            Cow::from(CustomError::<'_>::RecordDoesNotExist(id).to_string()),
-        ));
+        return Err(CustomError::RecordDoesNotExist(id).into());
     }
 
     db.run(move |conn| project_statuses::delete(conn, &id_delete))

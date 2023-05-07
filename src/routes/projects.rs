@@ -40,12 +40,7 @@ pub async fn get_project_by_name<'a>(db: Db, name: &str) -> Result<Json<Project>
         .await?;
     match project {
         Some(project) => Ok(Json(project)),
-        None => {
-            return Err(AppError::new(
-                Status::NotFound,
-                Cow::from(CustomError::<'_>::RecordDoesNotExist(name).to_string()),
-            ))
-        }
+        None => Err(CustomError::RecordDoesNotExist(name).into()),
     }
 }
 
@@ -84,12 +79,7 @@ pub async fn update_project<'a>(
         .await?
     {
         Some(project) => project,
-        None => {
-            return Err(AppError::new(
-                Status::NotFound,
-                Cow::from(CustomError::<'_>::RecordDoesNotExist(id).to_string()),
-            ))
-        }
+        None => return Err(CustomError::RecordDoesNotExist(id).into()),
     };
 
     let updated_project = Project {
@@ -126,10 +116,7 @@ pub async fn delete_project<'a>(db: Db, id: &str) -> Result<Status, AppError<'a>
         .await?
         .is_none()
     {
-        return Err(AppError::new(
-            Status::NotFound,
-            Cow::from(CustomError::<'_>::RecordDoesNotExist(id).to_string()),
-        ));
+        return Err(CustomError::RecordDoesNotExist(id).into());
     }
 
     db.run(move |conn| projects::delete(conn, &id_delete))
