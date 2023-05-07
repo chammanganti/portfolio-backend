@@ -46,7 +46,7 @@ impl<'a> Default for AppError<'a> {
     }
 }
 
-impl<'a> From<DbError> for AppError<'a> {
+impl<'a> From<DbError<'_>> for AppError<'a> {
     fn from(err: DbError) -> Self {
         match err {
             DbError::RecordAlreadyExists(info) => Self::new(
@@ -87,27 +87,29 @@ impl From<ValidationErrors> for AppError<'_> {
 }
 
 #[derive(Error, Debug)]
-pub enum DbError {
+pub enum DbError<'a> {
     #[error("Record already exists: {0}")]
-    RecordAlreadyExists(String),
+    RecordAlreadyExists(Cow<'a, str>),
     #[error("Foreign key value does not exist")]
-    ForeignKeyDoesNotExist(String),
+    ForeignKeyDoesNotExist(Cow<'a, str>),
     #[error("Internal db error")]
     InternalError,
 }
 
-impl From<diesel::result::Error> for DbError {
+impl<'a> From<diesel::result::Error> for DbError<'a> {
     fn from(err: diesel::result::Error) -> Self {
         match err {
             diesel::result::Error::DatabaseError(kind, info) => match kind {
                 DatabaseErrorKind::UniqueViolation => {
-                    DbError::RecordAlreadyExists(info.message().to_string())
+                    DbError::RecordAlreadyExists(Cow::Owned(info.message().to_string()))
                 }
-                DatabaseErrorKind::ForeignKeyViolation => DbError::ForeignKeyDoesNotExist(
-                    info.constraint_name()
-                        .unwrap_or("unable to retrieve constraint")
-                        .to_string(),
-                ),
+                DatabaseErrorKind::ForeignKeyViolation => {
+                    DbError::ForeignKeyDoesNotExist(Cow::Owned(
+                        info.constraint_name()
+                            .unwrap_or("unable to retrieve constraint")
+                            .to_string(),
+                    ))
+                }
                 _ => DbError::InternalError,
             },
             _ => DbError::InternalError,
