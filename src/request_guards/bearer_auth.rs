@@ -1,3 +1,4 @@
+use chrono::Utc;
 use rocket::{
     http::Status,
     request::{FromRequest, Outcome},
@@ -34,7 +35,9 @@ impl<'a> BearerAuth<'a> {
             .parse_token(&auth_header[7..])
             .map_err(|_| AuthError::InvalidToken)?;
 
-        // TODO: add checks
+        if token_data.claims.exp < Utc::now().timestamp() {
+            return Err(AuthError::ExpiredToken);
+        }
 
         Ok(Self {
             claims: token_data.claims,

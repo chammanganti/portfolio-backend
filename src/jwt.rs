@@ -1,4 +1,4 @@
-use jsonwebtoken::{decode, DecodingKey, TokenData, Validation};
+use jsonwebtoken::{decode, Algorithm, DecodingKey, TokenData, Validation};
 use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
 use uuid::Uuid;
@@ -20,13 +20,16 @@ impl JwtService {
     }
 
     pub fn parse_token(&self, token: &str) -> Result<TokenData<JwtClaims<'_>>, ()> {
-        let claims = decode::<JwtClaims<'_>>(
+        let mut validation = Validation::new(Algorithm::HS256);
+        validation.validate_exp = false;
+
+        let token_data = decode::<JwtClaims<'_>>(
             token,
             &DecodingKey::from_secret(self.0.as_ref()),
-            &Validation::default(),
+            &validation,
         )
         .map_err(|_| ())?;
 
-        Ok(claims)
+        Ok(token_data)
     }
 }
