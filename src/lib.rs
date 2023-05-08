@@ -22,6 +22,7 @@ mod errors;
 mod grpc;
 mod jwt;
 mod models;
+mod request_guards;
 mod routes;
 mod schema;
 

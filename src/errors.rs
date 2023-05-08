@@ -134,3 +134,39 @@ impl<'a> From<diesel::result::Error> for DbError<'a> {
         }
     }
 }
+
+#[allow(dead_code)]
+#[derive(Error, Debug)]
+pub enum AuthError {
+    #[error("Token is expired")]
+    ExpiredToken,
+    #[error("Invalid header")]
+    InvalidHeader,
+    #[error("Invalid token")]
+    InvalidToken,
+    #[error("Missing authorization header")]
+    MissingAuthHeader,
+}
+
+impl<'a> From<AuthError> for AppError<'a> {
+    fn from(err: AuthError) -> Self {
+        match err {
+            AuthError::ExpiredToken => Self::new(
+                Status::Unauthorized,
+                Cow::from(String::from("Token is expired")),
+            ),
+            AuthError::InvalidHeader => Self::new(
+                Status::Unauthorized,
+                Cow::from(String::from("Invalid header")),
+            ),
+            AuthError::InvalidToken => Self::new(
+                Status::Unauthorized,
+                Cow::from(String::from("Invalid token")),
+            ),
+            AuthError::MissingAuthHeader => Self::new(
+                Status::Unauthorized,
+                Cow::from(String::from("Missing authorization header")),
+            ),
+        }
+    }
+}
