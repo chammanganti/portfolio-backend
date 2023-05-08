@@ -16,9 +16,11 @@ use grpc::{
 };
 use models::project_status::ProjectStatus;
 
+mod config;
 mod db;
 mod errors;
 mod grpc;
+mod jwt;
 mod models;
 mod routes;
 mod schema;
@@ -28,6 +30,7 @@ pub fn rocket() -> _ {
     dotenv().ok();
     rocket::build()
         .attach(db::Db::fairing())
+        .attach(config::AppConfig::manage())
         .attach(AdHoc::on_liftoff("gRPC", |rocket| {
             Box::pin(async move {
                 let addr = "[::1]:9000".parse().unwrap();
